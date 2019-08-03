@@ -1,65 +1,77 @@
-def consolidate_cart(cart: [])
+def consolidate_cart(cart:[])
+  # code here
+  my_hash = {}
 
-  consolCart = {}
-
-  cart.each do |foodHash|
-    foodHash.each do |food, foodData|
-      consolCartData = consolCart[food]
-      if consolCartData == nil 
-        consolCartData = {}
-        consolCart[food] = foodData
-        consolCart[food][:count] = 1
+  cart.each do |item|
+    item.each do |itemname, data|
+      if my_hash[itemname] == nil
+        my_hash[itemname] = data
+        my_hash[itemname][:count] = 1 
       else
-        consolCart[food][:count] += 1
+        my_hash[itemname][:count] += 1
       end
     end
   end
-  consolCart
+  my_hash
 end
 
-def apply_single_coupon(cart, coupon)
-
-  coupItem = coupon[:item]
-  
-  if cart.keys.include?(coupItem) && cart[coupItem][:count] >= coupon[:num]
-    cart[coupItem][:count] = cart[coupItem][:count] - coupon[:num]
-    cart["#{coupItem} W/COUPON"] ||= {}
-    cart["#{coupItem} W/COUPON"][:price] = coupon[:cost]
-    cart["#{coupItem} W/COUPON"][:clearance] = cart[coupItem][:clearance]
-    cart["#{coupItem} W/COUPON"][:count] ||= 0
-    cart["#{coupItem} W/COUPON"][:count] += 1
+def apply_coupons(cart:[], coupons:[])
+  # code here
+  my_hash = {}
+  if coupons == nil || coupons.empty?
+    my_hash = cart
   end
+  coupons.each do |coupon|
+    cart.each do |itemname, data|
+      if itemname == coupon[:item]
+        count = data[:count] - coupon[:num]
+
+        if count >= 0
+          if my_hash["#{itemname} W/COUPON"] == nil
+            my_hash["#{itemname} W/COUPON"] = {price: coupon[:cost], clearance: data[:clearance], count: 1}
+          else
+            couponcount = my_hash["#{itemname} W/COUPON"][:count] + 1
+            my_hash["#{itemname} W/COUPON"] = {price: coupon[:cost], clearance: data[:clearance], count: couponcount}
+          end
+        else
+          count = data[:count]
+        end
+        my_hash[itemname] = data
+        my_hash[itemname][:count] = count
+      else
+        my_hash[itemname] = data
+      end
+    end
+  end
+  my_hash
 end
 
-def apply_coupons(cart: [], coupons: [])
-  coupons.each do |couponHash|
-    apply_single_coupon(cart, couponHash)
+def apply_clearance(cart:[])
+  # code here
+  cart.each do |itemname, data|
+    if data[:clearance]
+      discount = data[:price] * 0.8
+      data[:price] = discount.round(2)
+    end
   end
   cart
 end
 
-
-def apply_clearance(cart:[])
-  cart.each do |item, itemHash|
-    if itemHash[:clearance] == true
-      itemHash[:price] = (itemHash[:price] * 0.80).round(2)
-    end
-  end
-end
-
 def checkout(cart: [], coupons: [])
-  consolCart = consolidate_cart(cart: cart)
-  appliedCoupons = apply_coupons(cart: consolCart, coupons: coupons)
-  appliedClearance = apply_clearance(cart: appliedCoupons)
-  
+  # code here
+end 
+  cart = consolidate_cart(cart:cart)
+  cart = apply_coupons(cart:cart, coupons:coupons)
+  cart = apply_clearance(cart:cart)
   total = 0
-  appliedClearance.each do |item, itemHash|
-    total += (itemHash[:count] * itemHash[:price])
+  cart.each do |itemname, data|
+    total += ( data[:price] * data[:count] )
   end
-  
   if total > 100
-    total = total * 0.90
+    puts total
+    total = total - (total * 0.1 )
+    #total.round(2)
   end
-  
-  total.round(2)
+  total
 end
+
