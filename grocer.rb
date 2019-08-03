@@ -1,77 +1,77 @@
 def consolidate_cart(cart:[])
+  result = {}
   # code here
-  my_hash = {}
-
-  cart.each do |item|
-    item.each do |itemname, data|
-      if my_hash[itemname] == nil
-        my_hash[itemname] = data
-        my_hash[itemname][:count] = 1 
+  cart.each_with_index do |item, i|
+    item.each do |food, info|
+      if result[food]
+        result[food][:count] += 1
       else
-        my_hash[itemname][:count] += 1
+        result[food] = info
+        result[food][:count] = 1
       end
     end
   end
-  my_hash
+  result
 end
 
-def apply_coupons(cart:[], coupons:[])
-  # code here
-  my_hash = {}
-  if coupons == nil || coupons.empty?
-    my_hash = cart
-  end
-  coupons.each do |coupon|
-    cart.each do |itemname, data|
-      if itemname == coupon[:item]
-        count = data[:count] - coupon[:num]
 
-        if count >= 0
-          if my_hash["#{itemname} W/COUPON"] == nil
-            my_hash["#{itemname} W/COUPON"] = {price: coupon[:cost], clearance: data[:clearance], count: 1}
-          else
-            couponcount = my_hash["#{itemname} W/COUPON"][:count] + 1
-            my_hash["#{itemname} W/COUPON"] = {price: coupon[:cost], clearance: data[:clearance], count: couponcount}
-          end
+
+def apply_coupons(cart:[], coupons:[])
+  result = {}
+  # code here#
+  cart.each do |food, info|
+    coupons.each do |coupon|
+      if food == coupon[:item] && info[:count] >= coupon[:num]
+        info[:count] =  info[:count] - coupon[:num]
+        if result["#{food} W/COUPON"]
+          result["#{food} W/COUPON"][:count] += 1
         else
-          count = data[:count]
+          result["#{food} W/COUPON"] = {:price => coupon[:cost], :clearance => info[:clearance], :count => 1}
         end
-        my_hash[itemname] = data
-        my_hash[itemname][:count] = count
-      else
-        my_hash[itemname] = data
       end
     end
+    result[food] = info
   end
-  my_hash
+  result
 end
 
 def apply_clearance(cart:[])
+  clearance_cart = {}
   # code here
-  cart.each do |itemname, data|
-    if data[:clearance]
-      discount = data[:price] * 0.8
-      data[:price] = discount.round(2)
+  cart.each do |food, info|
+    clearance_cart[food] = {}
+    if info[:clearance] == true
+      clearance_cart[food][:price] = info[:price] * 4 / 5
+    else
+      clearance_cart[food][:price] = info[:price]
     end
+    clearance_cart[food][:clearance] = info[:clearance]
+    clearance_cart[food][:count] = info[:count]
   end
-  cart
+  clearance_cart
 end
+
+=begin
+### The `checkout` method
+Create a `checkout` method that calculates the total cost of the consolidated cart.
+When checking out, follow these steps *in order*:
+* Apply coupon discounts if the proper number of items are present.
+* Apply 20% discount if items are on clearance.
+* If, after applying the coupon discounts and the clearance discounts, the cart's total is over $100, then apply a 10% discount.
+### Named Parameters
+The method signature for the checkout method is
+`consolidate_cart(cart:[])`. This, along with the checkout method uses a ruby 2.0 feature called [Named Parameters](http://brainspec.com/blog/2012/10/08/keyword-arguments-ruby-2-0/).
+Named parameters give you more expressive code since you are specifying what each parameter is for. Another benefit is the order you pass your parameters doesn't matter!
+`checkout(cart: [], coupons: [])` is the same as `checkout(coupons: [], cart: [])`
+=end
 
 def checkout(cart: [], coupons: [])
-  # code here
-end 
-  cart = consolidate_cart(cart:cart)
-  cart = apply_coupons(cart:cart, coupons:coupons)
-  cart = apply_clearance(cart:cart)
-  total = 0
-  cart.each do |itemname, data|
-    total += ( data[:price] * data[:count] )
+  cart = consolidate_cart(cart: cart)
+  cart = apply_coupons(cart: cart, coupons: coupons)
+  cart = apply_clearance(cart: cart)
+  result = 0
+  cart.each do |food, info|
+    result += (info[:price] * info[:count]).to_f
   end
-  if total > 100
-    puts total
-    total = total - (total * 0.1 )
-    #total.round(2)
-  end
-  total
+  result > 100 ? result * 0.9 : result
 end
-
